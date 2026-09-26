@@ -13,3 +13,4 @@ data/
 uploads/
 
 .DS_Store
+.devcerts/
