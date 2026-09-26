@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="/static/css/app.css">
 </head>
 <body>
-    <main class="hud">
+    <main class="hud" id="hud">
         <header class="hud-header">
             <div>
                 <span class="eyebrow">BRICKHUD</span>
@@ -24,24 +24,11 @@
             </div>
 
             <div class="wall-visual" aria-label="Back wall with three windows">
-                <button class="window" data-window="1">
-                    <span>W1</span>
-                    <small>WINDOW 1</small>
-                </button>
-
+                <button class="window" data-window="1"><span>W1</span><small>WINDOW 1</small></button>
                 <div class="pier"></div>
-
-                <button class="window" data-window="2">
-                    <span>W2</span>
-                    <small>WINDOW 2</small>
-                </button>
-
+                <button class="window" data-window="2"><span>W2</span><small>WINDOW 2</small></button>
                 <div class="pier"></div>
-
-                <button class="window" data-window="3">
-                    <span>W3</span>
-                    <small>WINDOW 3</small>
-                </button>
+                <button class="window" data-window="3"><span>W3</span><small>WINDOW 3</small></button>
             </div>
 
             <div class="wall-caption">
@@ -52,7 +39,6 @@
 
         <section class="selector">
             <p>SELECT OPENING</p>
-
             <div class="selector-buttons">
                 <button data-select="1">Window 1</button>
                 <button data-select="2">Window 2</button>
@@ -65,8 +51,35 @@
             <strong>Select a window</strong>
             <p>Tap an opening to focus it.</p>
         </section>
+
+        <button class="camera-launch" id="camera-launch" type="button">
+            OPEN CAMERA
+        </button>
     </main>
 
-    <script src="/static/js/app.js"></script>
+    <section class="camera-view" id="camera-view" hidden>
+        <div class="camera-stage" id="camera-stage">
+            <video id="camera-video" autoplay playsinline muted></video>
+
+            <div class="camera-topbar">
+                <button id="camera-close" type="button">CLOSE</button>
+                <div>
+                    <span>BRICKHUD</span>
+                    <strong id="camera-opening">SELECT WINDOW</strong>
+                </div>
+            </div>
+
+            <div class="camera-instruction" id="camera-instruction">
+                Point at the wall, then tap the anchor point.
+            </div>
+
+            <div class="anchor-marker" id="anchor-marker" hidden>
+                <div class="anchor-crosshair"></div>
+                <strong data-anchor-label></strong>
+            </div>
+        </div>
+    </section>
+
+    <script type="module" src="/static/js/app.js"></script>
 </body>
 </html>
