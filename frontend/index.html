@@ -53,7 +53,7 @@
         </section>
 
         <button class="camera-launch" id="camera-launch" type="button">
-            OPEN CAMERA
+            SET ANCHOR
         </button>
     </main>
 
@@ -65,17 +65,50 @@
                 <button id="camera-close" type="button">CLOSE</button>
                 <div>
                     <span>BRICKHUD</span>
-                    <strong id="camera-opening">SELECT WINDOW</strong>
+                    <strong id="camera-opening">BED 1 · ALIGN ROOM</strong>
                 </div>
             </div>
 
             <div class="camera-instruction" id="camera-instruction">
-                Point at the wall, then tap the anchor point.
+                Tap a known point from the BED 1 plan.
+            </div>
+
+            <div class="anchor-picker" id="anchor-picker" hidden>
+                <div class="anchor-picker-card">
+                    <strong>WHAT DID YOU TAP?</strong>
+                    <select id="anchor-reference"></select>
+
+                    <div class="anchor-picker-actions">
+                        <button id="anchor-cancel" type="button">CANCEL</button>
+                        <button id="anchor-confirm" type="button">SET ANCHOR</button>
+                    </div>
+                </div>
             </div>
 
             <div class="anchor-marker" id="anchor-marker" hidden>
                 <div class="anchor-crosshair"></div>
                 <strong data-anchor-label></strong>
+            </div>
+
+            <div class="alignment-controls" id="alignment-controls">
+                <div id="alignment-status">
+                    SET AT LEAST 3 ANCHORS
+                </div>
+
+                <button
+                    id="align-room"
+                    type="button"
+                    disabled
+                >
+                    ALIGN BED 1
+                </button>
+
+                <button
+                    id="walk-ar"
+                    type="button"
+                >
+                    ENTER WALK AR
+                </button>
             </div>
         </div>
     </section>

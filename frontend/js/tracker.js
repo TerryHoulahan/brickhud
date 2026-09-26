@@ -7,9 +7,21 @@ const LOST_THRESHOLD = 38;
 let running = false;
 let frameCanvas = null;
 let frameContext = null;
-let template = null;
-let trackedPoint = null;
 let lastFrameTime = 0;
+
+/*
+ * Multiple physical reference points can now be tracked at once.
+ *
+ * Each target:
+ * {
+ *   id,
+ *   template,
+ *   point: { x, y },
+ *   score,
+ *   visible
+ * }
+ */
+const targets = new Map();
 
 function ensureCanvas(video) {
     if (!frameCanvas) {
@@ -71,9 +83,15 @@ function patchDifference(a, b) {
         for (let x = 0; x < PATCH_SIZE; x += SAMPLE_STEP) {
             const index = (y * PATCH_SIZE + x) * 4;
 
-            difference += Math.abs(a.data[index] - b.data[index]);
-            difference += Math.abs(a.data[index + 1] - b.data[index + 1]);
-            difference += Math.abs(a.data[index + 2] - b.data[index + 2]);
+            difference += Math.abs(
+                a.data[index] - b.data[index],
+            );
+            difference += Math.abs(
+                a.data[index + 1] - b.data[index + 1],
+            );
+            difference += Math.abs(
+                a.data[index + 2] - b.data[index + 2],
+            );
 
             samples += 3;
         }
@@ -82,21 +100,21 @@ function patchDifference(a, b) {
     return difference / samples;
 }
 
-function findBestMatch() {
-    if (!template || !trackedPoint) {
+function findBestMatch(target) {
+    if (!target.template || !target.point) {
         return null;
     }
 
     let best = null;
 
     for (
-        let y = trackedPoint.y - SEARCH_RADIUS;
-        y <= trackedPoint.y + SEARCH_RADIUS;
+        let y = target.point.y - SEARCH_RADIUS;
+        y <= target.point.y + SEARCH_RADIUS;
         y += SAMPLE_STEP
     ) {
         for (
-            let x = trackedPoint.x - SEARCH_RADIUS;
-            x <= trackedPoint.x + SEARCH_RADIUS;
+            let x = target.point.x - SEARCH_RADIUS;
+            x <= target.point.x + SEARCH_RADIUS;
             x += SAMPLE_STEP
         ) {
             const patch = getPatch(x, y);
@@ -105,7 +123,10 @@ function findBestMatch() {
                 continue;
             }
 
-            const score = patchDifference(template, patch);
+            const score = patchDifference(
+                target.template,
+                patch,
+            );
 
             if (!best || score < best.score) {
                 best = { x, y, score };
@@ -116,7 +137,12 @@ function findBestMatch() {
     return best;
 }
 
-export function screenToVideoPoint(video, stage, clientX, clientY) {
+export function screenToVideoPoint(
+    video,
+    stage,
+    clientX,
+    clientY,
+) {
     const bounds = stage.getBoundingClientRect();
 
     const scale = Math.max(
@@ -136,7 +162,12 @@ export function screenToVideoPoint(video, stage, clientX, clientY) {
     };
 }
 
-export function videoToScreenPoint(video, stage, x, y) {
+export function videoToScreenPoint(
+    video,
+    stage,
+    x,
+    y,
+) {
     const bounds = stage.getBoundingClientRect();
 
     const scale = Math.max(
@@ -156,7 +187,11 @@ export function videoToScreenPoint(video, stage, x, y) {
     };
 }
 
-export function setTrackingTarget(video, point) {
+/*
+ * Add or replace one tracked reference.
+ * Captures its own template from the current video frame.
+ */
+export function addTrackingTarget(video, id, point) {
     captureFrame(video);
 
     const patch = getPatch(point.x, point.y);
@@ -165,16 +200,58 @@ export function setTrackingTarget(video, point) {
         return false;
     }
 
-    template = patch;
-    trackedPoint = {
-        x: point.x,
-        y: point.y,
-    };
+    targets.set(id, {
+        id,
+        template: patch,
+        point: {
+            x: point.x,
+            y: point.y,
+        },
+        score: 0,
+        visible: true,
+    });
 
     return true;
 }
 
-export function startTracking(video, onUpdate, onLost) {
+export function removeTrackingTarget(id) {
+    targets.delete(id);
+}
+
+export function clearTrackingTargets() {
+    targets.clear();
+}
+
+/*
+ * Temporary compatibility function.
+ * Old callers can still set one target while we migrate.
+ */
+export function setTrackingTarget(video, point) {
+    clearTrackingTargets();
+    return addTrackingTarget(
+        video,
+        "legacy-target",
+        point,
+    );
+}
+
+export function getTrackingTargets() {
+    return Array.from(targets.values()).map((target) => ({
+        id: target.id,
+        point: {
+            x: target.point.x,
+            y: target.point.y,
+        },
+        score: target.score,
+        visible: target.visible,
+    }));
+}
+
+export function startMultiTracking(
+    video,
+    onUpdate,
+    onLost,
+) {
     running = true;
     lastFrameTime = 0;
 
@@ -188,20 +265,52 @@ export function startTracking(video, onUpdate, onLost) {
 
             captureFrame(video);
 
-            const match = findBestMatch();
+            const observations = [];
 
-            if (!match || match.score > LOST_THRESHOLD) {
-                running = false;
-                onLost();
-                return;
+            for (const target of targets.values()) {
+                const match = findBestMatch(target);
+
+                if (
+                    !match ||
+                    match.score > LOST_THRESHOLD
+                ) {
+                    target.visible = false;
+
+                    observations.push({
+                        id: target.id,
+                        point: { ...target.point },
+                        score: match?.score ?? Infinity,
+                        visible: false,
+                    });
+
+                    continue;
+                }
+
+                target.point = {
+                    x: match.x,
+                    y: match.y,
+                };
+
+                target.score = match.score;
+                target.visible = true;
+
+                observations.push({
+                    id: target.id,
+                    point: { ...target.point },
+                    score: target.score,
+                    visible: true,
+                });
             }
 
-            trackedPoint = {
-                x: match.x,
-                y: match.y,
-            };
+            const visible = observations.filter(
+                (observation) => observation.visible,
+            );
 
-            onUpdate(trackedPoint, match.score);
+            if (visible.length) {
+                onUpdate(observations);
+            } else if (targets.size) {
+                onLost(observations);
+            }
         }
 
         video.requestVideoFrameCallback(processFrame);
@@ -210,8 +319,41 @@ export function startTracking(video, onUpdate, onLost) {
     video.requestVideoFrameCallback(processFrame);
 }
 
+export function startTracking(
+    video,
+    onUpdate,
+    onLost,
+) {
+    startMultiTracking(
+        video,
+        (observations) => {
+            const observation = observations.find(
+                (item) => item.visible,
+            );
+
+            if (observation) {
+                onUpdate(
+                    observation.point,
+                    observation.score,
+                );
+            }
+        },
+        () => onLost(),
+    );
+}
+
+/*
+ * Stop processing frames but KEEP the targets.
+ * This is useful while adding another anchor.
+ */
+export function pauseTracking() {
+    running = false;
+}
+
+/*
+ * Full stop/reset.
+ */
 export function stopTracking() {
     running = false;
-    template = null;
-    trackedPoint = null;
+    clearTrackingTargets();
 }
