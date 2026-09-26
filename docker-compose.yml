@@ -3,7 +3,8 @@ services:
     build:
       context: .
     ports:
-      - "127.0.0.1:8200:8000"
+      - "8200:8000"
     volumes:
       - ./app:/app/app
+      - ./frontend:/app/frontend
     restart: unless-stopped

@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#111820">
+    <title>BrickHUD</title>
+    <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+    <main class="hud">
+        <header class="hud-header">
+            <div>
+                <span class="eyebrow">BRICKHUD</span>
+                <h1>Room 01</h1>
+            </div>
+            <div class="room-size">4200 × 6000</div>
+        </header>
+
+        <section class="wall-card">
+            <div class="wall-heading">
+                <span>BACK WALL</span>
+                <strong>4200 mm</strong>
+            </div>
+
+            <div class="wall-visual" aria-label="Back wall with three windows">
+                <button class="window" data-window="1">
+                    <span>W1</span>
+                    <small>WINDOW 1</small>
+                </button>
+
+                <div class="pier"></div>
+
+                <button class="window" data-window="2">
+                    <span>W2</span>
+                    <small>WINDOW 2</small>
+                </button>
+
+                <div class="pier"></div>
+
+                <button class="window" data-window="3">
+                    <span>W3</span>
+                    <small>WINDOW 3</small>
+                </button>
+            </div>
+
+            <div class="wall-caption">
+                <span>ROOM DEPTH</span>
+                <strong>6000 mm</strong>
+            </div>
+        </section>
+
+        <section class="selector">
+            <p>SELECT OPENING</p>
+
+            <div class="selector-buttons">
+                <button data-select="1">Window 1</button>
+                <button data-select="2">Window 2</button>
+                <button data-select="3">Window 3</button>
+            </div>
+        </section>
+
+        <section class="readout" id="readout">
+            <span>BACK WALL</span>
+            <strong>Select a window</strong>
+            <p>Tap an opening to focus it.</p>
+        </section>
+    </main>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
