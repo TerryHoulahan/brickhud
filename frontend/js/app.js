@@ -1,5 +1,12 @@
 import { startCamera, stopCamera } from "./camera.js";
 import { clearAnchor, placeAnchor } from "./anchor.js";
+import {
+    screenToVideoPoint,
+    videoToScreenPoint,
+    setTrackingTarget,
+    startTracking,
+    stopTracking,
+} from "./tracker.js";
 
 const windows = document.querySelectorAll("[data-window]");
 const selectors = document.querySelectorAll("[data-select]");
@@ -16,7 +23,6 @@ const cameraInstruction = document.getElementById("camera-instruction");
 const anchorMarker = document.getElementById("anchor-marker");
 
 let selectedWindow = null;
-let anchor = null;
 
 function selectWindow(number) {
     selectedWindow = number;
@@ -48,9 +54,11 @@ async function openCamera() {
         return;
     }
 
+    stopTracking();
     clearAnchor(anchorMarker);
-    anchor = null;
-    cameraInstruction.textContent = "Point at the wall, then tap the anchor point.";
+
+    cameraInstruction.textContent =
+        "Tap a sharp corner or distinctive point on the wall.";
 
     try {
         await startCamera(cameraVideo);
@@ -66,9 +74,41 @@ async function openCamera() {
 }
 
 function closeCamera() {
+    stopTracking();
     stopCamera(cameraVideo);
     cameraView.hidden = true;
     hud.hidden = false;
+}
+
+function showTrackedPoint(point, score) {
+    const screenPoint = videoToScreenPoint(
+        cameraVideo,
+        cameraStage,
+        point.x,
+        point.y,
+    );
+
+    placeAnchor(
+        cameraStage,
+        anchorMarker,
+        `W${selectedWindow} · TRACKING`,
+        cameraStage.getBoundingClientRect().left + screenPoint.x,
+        cameraStage.getBoundingClientRect().top + screenPoint.y,
+    );
+
+    cameraInstruction.textContent =
+        `W${selectedWindow} tracking · match ${score.toFixed(1)}`;
+}
+
+function showTrackingLost() {
+    const label = anchorMarker.querySelector("[data-anchor-label]");
+
+    if (label) {
+        label.textContent = `W${selectedWindow} · TRACK LOST`;
+    }
+
+    cameraInstruction.textContent =
+        "Tracking lost. Tap the physical point again.";
 }
 
 windows.forEach((element) => {
@@ -87,14 +127,37 @@ cameraStage.addEventListener("click", (event) => {
         return;
     }
 
-    anchor = placeAnchor(
+    stopTracking();
+
+    const videoPoint = screenToVideoPoint(
+        cameraVideo,
+        cameraStage,
+        event.clientX,
+        event.clientY,
+    );
+
+    const targetSet = setTrackingTarget(cameraVideo, videoPoint);
+
+    if (!targetSet) {
+        cameraInstruction.textContent =
+            "Too close to the camera edge. Tap farther inside the picture.";
+        return;
+    }
+
+    placeAnchor(
         cameraStage,
         anchorMarker,
-        `W${selectedWindow} · ANCHOR`,
+        `W${selectedWindow} · LOCKED`,
         event.clientX,
         event.clientY,
     );
 
     cameraInstruction.textContent =
-        `W${selectedWindow} anchored · tap another point to reposition`;
+        `W${selectedWindow} locked · move the camera slowly`;
+
+    startTracking(
+        cameraVideo,
+        showTrackedPoint,
+        showTrackingLost,
+    );
 });
