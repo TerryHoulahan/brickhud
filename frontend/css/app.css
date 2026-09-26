@@ -368,3 +368,59 @@ h1 {
     font-size: 12px;
     white-space: nowrap;
 }
+
+.room-camera-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    pointer-events: none;
+}
+
+.mapped-room-name {
+    position: absolute;
+    transform: translateX(-50%);
+    padding: 7px 12px;
+    border: 1px solid rgba(255, 217, 120, .8);
+    border-radius: 6px;
+    background: rgba(0, 0, 0, .76);
+    color: #ffd978;
+    font-size: 15px;
+    font-weight: 900;
+    letter-spacing: .12em;
+    white-space: nowrap;
+}
+
+.mapped-opening {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    min-width: 72px;
+    padding: 8px 10px;
+    border: 2px solid rgba(255, 255, 255, .8);
+    border-radius: 7px;
+    background: rgba(0, 0, 0, .68);
+    color: #fff;
+    text-align: center;
+}
+
+.mapped-opening strong,
+.mapped-opening span {
+    display: block;
+}
+
+.mapped-opening strong {
+    color: #ffd978;
+    font-size: 20px;
+    line-height: 1;
+}
+
+.mapped-opening span {
+    margin-top: 4px;
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: .12em;
+}
+
+.mapped-opening.reference-opening {
+    border-color: #ffd978;
+    box-shadow: 0 0 18px rgba(255, 217, 120, .35);
+}

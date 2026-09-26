@@ -7,6 +7,11 @@ import {
     startTracking,
     stopTracking,
 } from "./tracker.js";
+import { BED_1 } from "./room-data.js";
+import {
+    clearRoomOverlay,
+    renderWallFromAnchor,
+} from "./room-overlay.js";
 
 const windows = document.querySelectorAll("[data-window]");
 const selectors = document.querySelectorAll("[data-select]");
@@ -56,6 +61,7 @@ async function openCamera() {
 
     stopTracking();
     clearAnchor(anchorMarker);
+    clearRoomOverlay();
 
     cameraInstruction.textContent =
         "Tap a sharp corner or distinctive point on the wall.";
@@ -75,6 +81,7 @@ async function openCamera() {
 
 function closeCamera() {
     stopTracking();
+    clearRoomOverlay();
     stopCamera(cameraVideo);
     cameraView.hidden = true;
     hud.hidden = false;
@@ -96,19 +103,26 @@ function showTrackedPoint(point, score) {
         cameraStage.getBoundingClientRect().top + screenPoint.y,
     );
 
-    cameraInstruction.textContent =
-        `W${selectedWindow} tracking · match ${score.toFixed(1)}`;
-}
-
-function showTrackingLost() {
-    const label = anchorMarker.querySelector("[data-anchor-label]");
-
-    if (label) {
-        label.textContent = `W${selectedWindow} · TRACK LOST`;
+    if (selectedWindow === "1") {
+        renderWallFromAnchor(
+            cameraStage,
+            BED_1,
+            BED_1.walls.windowWall,
+            "W1",
+            screenPoint,
+        );
     }
 
     cameraInstruction.textContent =
-        "Tracking lost. Tap the physical point again.";
+        `BED 1 · W${selectedWindow} tracking · match ${score.toFixed(1)}`;
+}
+
+function showTrackingLost() {
+    clearRoomOverlay();
+    clearAnchor(anchorMarker);
+
+    cameraInstruction.textContent =
+        "Tracking lost · point back at the reference and tap it again.";
 }
 
 windows.forEach((element) => {
